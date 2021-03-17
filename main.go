@@ -46,6 +46,9 @@ func main() {
 
 func getpage() []extractedJob {
 	var jobs []extractedJob
+
+	c := make(chan extractedJob)
+
 	pageURL := baseURL
 
 	res, err := http.Get(pageURL)
@@ -58,21 +61,27 @@ func getpage() []extractedJob {
 	searchCards := doc.Find(".result-card")
 	searchCards.Each(func(i int, card *goquery.Selection) {
 
-		job := extractJob(card)
-		jobs = append(jobs, job)
+		//job := extractJob(card)
+		//jobs = append(jobs, job)
+		go extractJob(card, c)
 	})
+	for i := 0; i < searchCards.Length(); i++ {
+		job := <-c
+		jobs = append(jobs, job)
+	}
 	return jobs
 }
 
 //extract job function
-func extractJob(card *goquery.Selection) extractedJob {
+//make go routine
+func extractJob(card *goquery.Selection, c chan<- extractedJob) {
 	id, _ := card.Attr("data-id")
 	title := card.Find(".result-card__contents>h3").Text()
 	subtitle := card.Find(".result-card__contents>h4").Text()
 	location := card.Find(".result-card__meta>.job-result-card__location").Text()
 	date := card.Find(".result-card__meta>.job-result-card__listdate").Text()
 	//url later
-	return extractedJob{
+	c <- extractedJob{
 		id:       id,
 		title:    title,
 		subtitle: subtitle,
