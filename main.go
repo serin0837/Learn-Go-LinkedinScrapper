@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -33,10 +35,17 @@ func checkCode(res *http.Response) {
 }
 
 func main() {
-	getpage()
+	var jobs []extractedJob
+	extractedJob := getpage()
+	jobs = append(jobs, extractedJob...)
+	//fmt.Println(jobs)
+	writeJobs(jobs)
+	fmt.Println("writing job is done")
+
 }
 
-func getpage() {
+func getpage() []extractedJob {
+	var jobs []extractedJob
 	pageURL := baseURL
 
 	res, err := http.Get(pageURL)
@@ -47,17 +56,45 @@ func getpage() {
 	checkErr(err)
 	fmt.Println(doc)
 	searchCards := doc.Find(".result-card")
-	searchCards.Each(func(i int, s *goquery.Selection) {
-		id, _ := s.Attr("data-id")
-		fmt.Println(id, "<-id")
-		title := s.Find(".result-card__contents>h3").Text()
-		fmt.Println(title, "<-title")
-		subtitle := s.Find(".result-card__contents>h4").Text()
-		fmt.Println(subtitle, "<-subtitle")
-		location := s.Find(".result-card__meta>.job-result-card__location").Text()
-		fmt.Println(location, "<-location")
-		date := s.Find(".result-card__meta>.job-result-card__listdate").Text()
-		fmt.Println(date, "<-date")
-		//url later
+	searchCards.Each(func(i int, card *goquery.Selection) {
+
+		job := extractJob(card)
+		jobs = append(jobs, job)
 	})
+	return jobs
+}
+
+//extract job function
+func extractJob(card *goquery.Selection) extractedJob {
+	id, _ := card.Attr("data-id")
+	title := card.Find(".result-card__contents>h3").Text()
+	subtitle := card.Find(".result-card__contents>h4").Text()
+	location := card.Find(".result-card__meta>.job-result-card__location").Text()
+	date := card.Find(".result-card__meta>.job-result-card__listdate").Text()
+	//url later
+	return extractedJob{
+		id:       id,
+		title:    title,
+		subtitle: subtitle,
+		location: location,
+		date:     date,
+	}
+}
+
+//write job function
+func writeJobs(jobs []extractedJob) {
+	file, err := os.Create("jobs.csv")
+	checkErr(err)
+	w := csv.NewWriter(file)
+	defer w.Flush()
+
+	headers := []string{"Id", "Title", "Subtitle", "Location", "Date"}
+	wErr := w.Write(headers)
+	checkErr(wErr)
+
+	for _, job := range jobs {
+		jobSlice := []string{job.id, job.title, job.subtitle, job.location, job.date}
+		jwErr := w.Write(jobSlice)
+		checkErr(jwErr)
+	}
 }
