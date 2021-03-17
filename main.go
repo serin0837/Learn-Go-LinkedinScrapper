@@ -8,13 +8,17 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-type extractedReveiw struct {
+type extractedJob struct {
 	id       string
-	location string
 	title    string
+	subtitle string
+	location string
+	date     string
 }
 
-var baseURL string = "https://www.linkedin.com/jobs/search/?keywords=python"
+//in this page there is no pagination when I am not login
+// add location and keyword function
+var baseURL string = "https://www.linkedin.com/jobs/search/?keywords=python&location=United%20Kingdom"
 
 func checkErr(err error) {
 	if err != nil {
@@ -29,22 +33,31 @@ func checkCode(res *http.Response) {
 }
 
 func main() {
-	totalPages := getPages()
-	fmt.Println(totalPages)
+	getpage()
 }
 
-func getPages() int {
-	pages := 0
-	res, err := http.Get(baseURL)
+func getpage() {
+	pageURL := baseURL
+
+	res, err := http.Get(pageURL)
 	checkErr(err)
 	checkCode(res)
 	defer res.Body.Close()
-
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	checkErr(err)
 	fmt.Println(doc)
-	doc.Find(".artdeco-pagination").Each(func(i int, s *goquery.Selection) {
-		fmt.Println(s.Find("artdeco-pagination__indicator"))
+	searchCards := doc.Find(".result-card")
+	searchCards.Each(func(i int, s *goquery.Selection) {
+		id, _ := s.Attr("data-id")
+		fmt.Println(id, "<-id")
+		title := s.Find(".result-card__contents>h3").Text()
+		fmt.Println(title, "<-title")
+		subtitle := s.Find(".result-card__contents>h4").Text()
+		fmt.Println(subtitle, "<-subtitle")
+		location := s.Find(".result-card__meta>.job-result-card__location").Text()
+		fmt.Println(location, "<-location")
+		date := s.Find(".result-card__meta>.job-result-card__listdate").Text()
+		fmt.Println(date, "<-date")
+		//url later
 	})
-	return pages
 }
