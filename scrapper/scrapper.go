@@ -12,8 +12,9 @@ import (
 
 type extractedJob struct {
 	id       string
+	url      string
 	title    string
-	subtitle string
+	company  string
 	location string
 	date     string
 }
@@ -73,14 +74,16 @@ func getpage(url string) []extractedJob {
 func extractJob(card *goquery.Selection, c chan<- extractedJob) {
 	id, _ := card.Attr("data-id")
 	title := card.Find(".result-card__contents>h3").Text()
-	subtitle := card.Find(".result-card__contents>h4").Text()
+	company := card.Find(".result-card__contents>h4").Text()
 	location := card.Find(".result-card__meta>.job-result-card__location").Text()
 	date := card.Find(".result-card__meta>.job-result-card__listdate").Text()
 	//url later
+	url, _ := card.Find(".result-card__full-card-link").Attr("href")
 	c <- extractedJob{
 		id:       id,
+		url:      url,
 		title:    title,
-		subtitle: subtitle,
+		company:  company,
 		location: location,
 		date:     date,
 	}
@@ -93,12 +96,12 @@ func writeJobs(jobs []extractedJob) {
 	w := csv.NewWriter(file)
 	defer w.Flush()
 
-	headers := []string{"Id", "Title", "Subtitle", "Location", "Date"}
+	headers := []string{"Id", "URL", "Title", "Company", "Location", "Date"}
 	wErr := w.Write(headers)
 	checkErr(wErr)
 
 	for _, job := range jobs {
-		jobSlice := []string{job.id, job.title, job.subtitle, job.location, job.date}
+		jobSlice := []string{job.id, job.url, job.title, job.company, job.location, job.date}
 		jwErr := w.Write(jobSlice)
 		checkErr(jwErr)
 	}

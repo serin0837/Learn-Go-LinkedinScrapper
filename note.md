@@ -6,6 +6,6 @@
 
 
 ## things to fix
-1. country whitespace replace to %20
-2. in csv file make access to exact url //possible to access href file?
-3. subtitle to company
+1. country whitespace replace to %20 ok
+2. in csv file make access to exact url //possible to access href file? ok
+3. subtitle to company ok

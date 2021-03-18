@@ -14,7 +14,7 @@ func handleHome(c echo.Context) error {
 
 func handleScrape(c echo.Context) error {
 	defer os.Remove("jobs.csv")
-	term := strings.ToLower(c.FormValue("term"))
+	term := strings.Replace(strings.ToLower(c.FormValue("term")), " ", "%20", -1)
 	location := strings.ToLower(c.FormValue("location"))
 	scrapper.Scrape(term, location)
 	return c.Attachment("jobs.csv", "jobs.csv")
